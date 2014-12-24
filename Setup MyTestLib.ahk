@@ -6,8 +6,8 @@ ToDo:
 */
 
 #SingleInstance, force
-LibFiles		:= ["CVjoyInterface.ahk"]
-LibUnicodeAnsi	:= "A"
+LibFiles		:= ["MyTestLib.ahk"]
+;LibUnicodeAnsi	:= "A"
 
 Gui, Add, Text, x5 y5 w190 h190 vLog
 Gui, Show, W200 H200
