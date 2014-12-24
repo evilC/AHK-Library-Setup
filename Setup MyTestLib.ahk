@@ -199,47 +199,7 @@ DetectInstalledAHKVersion(){
 	} else {
 		return 0
 	}
-	/*
-	file := A_ScriptDir "\DynaRun.txt"
-	version := 0
-
-	ret := dynarun("FileAppend % A_AhkVersion, " file, "pipename")
-	if (ret){
-		sleep 20 ; give the script some time to finish
-		while !FileExist(file)
-			continue
-		FileRead version, % file
-		FileDelete % file
-		return version
-	} else {
-		; Could not get AHK version
-		;msgbox % "AHK not installed"
-		return 0
-	}
-	*/
-
 }
 
-/*
-DynaRun(TempScript, name="") {
-   static _:="uint",@:="Ptr"
-   __PIPE_GA_ := DllCall("CreateNamedPipe","str","\\.\pipe\" name,_,2,_,0,_,255,_,0,_,0,@,0,@,0)
-   __PIPE_    := DllCall("CreateNamedPipe","str","\\.\pipe\" name,_,2,_,0,_,255,_,0,_,0,@,0,@,0)
-   if (__PIPE_=-1 or __PIPE_GA_=-1)
-      Return 0
-   Run, %A_AhkPath% "\\.\pipe\%name%",,UseErrorLevel HIDE, PID
-   If ErrorLevel
-      Return 0
-      ;MsgBox, 262144, ERROR,% "Could not open file:`n" __AHK_EXE_ """\\.\pipe\" name """"
-   DllCall("ConnectNamedPipe",@,__PIPE_GA_,@,0)
-   DllCall("CloseHandle",@,__PIPE_GA_)
-   DllCall("ConnectNamedPipe",@,__PIPE_,@,0)
-   script := (A_IsUnicode ? chr(0xfeff) : (chr(239) . chr(187) . chr(191))) TempScript
-   if !DllCall("WriteFile",@,__PIPE_,"str",script,_,(StrLen(script)+1)*(A_IsUnicode ? 2 : 1),_ "*",0,@,0)
-      Return A_LastError,DllCall("CloseHandle",@,__PIPE_)
-   DllCall("CloseHandle",@,__PIPE_)
-   Return PID
-}
-*/
 GuiClose:
 	ExitApp
