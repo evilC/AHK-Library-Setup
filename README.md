@@ -10,6 +10,7 @@ If you distribute an Autohotkey library, for example via GitHub, and you wish to
 This tool has 4 main purposes.  
 1. Ensure the user can include the library from any folder using the `#include <lib>` syntax. This is acheived by insterting an .ahk file into `C:\Program Files\AutoHotkey\Lib` that contains the line `#include filename\to\source\file.ahk`.   
 This way, the user can keep the library file in the GitHub repo folder (And easily update it as the library updates) but always be able to include the latest version via the `#include <lib>` syntax.
+
 2. Ensure The AHK Lib folder exists.
 3. Ensure that AutoHotkey is installed   
 Note this is possible because the script is designed to be compiled to an EXE, so AHK is not required to run the Setup script.
