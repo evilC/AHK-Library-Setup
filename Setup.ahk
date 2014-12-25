@@ -30,7 +30,9 @@ You do not need to bundle the ahk file with the Library.
 ; ========================== DEVELOPER SETTINGS ========================================
 
 ; Debug mode ON suppresses welcome message and compiled check. You MUST turn DebugMode OFF before compiling for distribution
-DebugMode		:= 1
+DebugMode		:= 0
+
+LibName			:= "My Test Library"
 
 ; Which files you wish to add Redirects to in the AHK lib folder
 LibFiles		:= ["MyTestLib.ahk"]
@@ -41,7 +43,11 @@ WindowSize		:= [300,0]
 ; If you want to leave some instructions to users, put text in this var and it will appear in the DEVELOPER NOTES section.
 ; This section may not appear if the UI is too small.
 ; If you want a lot of text, you will have to manually set WindowSize[2].
-DevNotes		:= ""										
+DevNotes		:= ""
+
+; What the main include file is.
+; This is mainly used when generating usage examples for users.
+MainInclude		:= "MyTestLib"									
 
 ; ======================================================================================
 
@@ -63,12 +69,12 @@ LibFolder := AHKFolder "Lib"
 
 ; Show welcome message. Used in case people running the EXE run this file wondering what it was.
 if (!DebugMode){
-	msgbox welcome message
+	msgbox, 1, Welcome, % "Welcome to the Setup application for " LibName ".`n`nThis application is for coders who wish to use '" LibName "' in their coding projects.`nIf you are not a coder, and a little confused right now, just hit Cancel.`n`nIf you do want to use this library in your projects, this app will help you set up AHK so you can easily include this library from any folder on your computer using the following syntax:`n`n#include <" MainInclude ">`n`nNote that there is no .ahk extension!`n#include <" MainInclude ">, not #include <" MainInclude ".ahk>"
+	IfMsgBox, Cancel
+		ExitApp
 }
 
 ; Check AHK is installed, and is correct version
-
-; Run named pipe to attempt to pass code to installed AHK interpreter instead of the one this script is running on (because it is compiled)
 version := DetectInstalledAHKVersion()
 if (version){
 	if (version <= "1.0.48.05"){
@@ -163,6 +169,7 @@ Install:
 	LibFolder .= "\"
 	ScriptFolder := A_ScriptDir "\"
 
+	succeeded := 0
 	Loop % LibFiles.MaxIndex() {
 		failed := 0
 		; Check source file exists
@@ -218,7 +225,9 @@ Install:
 
 			; Create the include
 			CreateRedirect(A_Index)
-			if (ErrorLevel != 0){
+			if (ErrorLevel == 0){
+				succeeded++
+			} else {
 				msgbox % "Could not create Redirect File "LibFolder LibFiles[A_Index]
 				failed := 1
 			}
@@ -229,6 +238,16 @@ Install:
 			GuiControl, , % "RedirectResult" A_Index , FAILED
 		} else {
 			GuiControl, , % "RedirectResult" A_Index, SUCCEEDED
+		}
+
+		if (succeeded == LibFiles.MaxIndex()){
+			; All files installed OK
+			msgbox, 4, Setup Complete, % "All Libraries Set Up OK.`nYou may now include this library in your projects using the following syntax:`n`n#include <" MainInclude ">`n`nDo you wish to copy this text to the clipboard now?"
+			IfMsgBox, Yes
+				Clipboard := "#include <" MainInclude ">"
+		} else {
+			; All files not installed OK
+			msgbox % "Some or all of the Set Up procedure failed. The library may not work."
 		}
 
 	}
