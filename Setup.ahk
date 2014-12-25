@@ -43,7 +43,7 @@ WindowSize		:= [300,0]
 ; If you want to leave some instructions to users, put text in this var and it will appear in the DEVELOPER NOTES section.
 ; This section may not appear if the UI is too small.
 ; If you want a lot of text, you will have to manually set WindowSize[2].
-DevNotes		:= ""
+DevNotes		:= "Put your own text here.`n`nYou can use links, eg <a href=""http://evilc.com"">evilC.com</a>"
 
 ; What the main include file is.
 ; This is mainly used when generating usage examples for users.
@@ -101,7 +101,7 @@ if (A_IsCompiled){
 	}
 } else {
 	if (!DebugMode){
-		msgbox % "ERROR: This Script has not been compiled.`n`nPlease compile this script before distributing to users.`n`nIf you are not a developer or do not know, what the this file is, you can ignore / delete it."
+		msgbox % "ERROR: This Script has not been compiled.`n`nPlease compile this script before distributing to users.`n`nIf you are not a developer or do not know what the this file is, you can ignore or delete it."
 		ExitApp
 	}
 }
@@ -124,7 +124,7 @@ main_bottom := (LibFiles.MaxIndex() * LINE_SIZE) + 10 + LINE_SIZE
 if (!WindowSize[2]){
 	; Window Height not specified - work out how much more space we need.
 	if (DevNotes){
-		WindowSize[2] := main_bottom + 70
+		WindowSize[2] := main_bottom + 100
 	} else {
 		WindowSize[2] := main_bottom + 20
 	}
@@ -141,7 +141,7 @@ Gui, Add, Button, % "x" (WindowSize[1] / 2 ) - 25 " y" (WindowSize[2] - 25) " w5
 ; If we have 20 or  more pixels free between the bottom of the install list and the ok button, show dev notes.
 if (remain_space > 30 && DevNotes != ""){
 	Gui, Add, Text, % "x5 y" main_bottom " w" FULL_WIDTH " center", DEVELOPER NOTES
-	Gui, Add, Text, % "x5 y" main_bottom + 20 " w" FULL_WIDTH " h" remain_space - 20, % DevNotes
+	Gui, Add, Link, % "x5 y" main_bottom + 20 " w" FULL_WIDTH " h" remain_space - 20, % DevNotes
 	box_top := main_bottom - 10
 	Gui, Add, GroupBox, % "x0 y" box_top " w" WindowSize[1] - 4 " h" ok_top - box_top - 5
 }
