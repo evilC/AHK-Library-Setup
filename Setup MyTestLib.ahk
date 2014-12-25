@@ -29,15 +29,27 @@ You do not need to bundle the ahk file with the Library.
 
 ; ========================== DEVELOPER SETTINGS ========================================
 
-DebugMode		:= 1										; Debug mode ON suppresses welcome message and compiled check. You MUST turn DebugMode OFF before compiling for distribution
-LibFiles		:= ["MyTestLib.ahk","test2"]						; Which files you wish to add Redirects to in the AHK lib folder
-WindowSize		:= [300]									; Size of the Setup Window [x,y]. You can omit Y if you don't have any DevNotes. The GUI will Auto-Size.
-DevNotes		:= ""
+; Debug mode ON suppresses welcome message and compiled check. You MUST turn DebugMode OFF before compiling for distribution
+DebugMode		:= 1
+
+; Which files you wish to add Redirects to in the AHK lib folder
+LibFiles		:= ["MyTestLib.ahk"]
+
+; Size of the Setup Window [x,y]. You can omit Y (or set it to 0) and the GUI will Auto-Size.
+WindowSize		:= [300,0]
+
+; If you want to leave some instructions to users, put text in this var and it will appear in the DEVELOPER NOTES section.
+; This section may not appear if the UI is too small.
+; If you want a lot of text, you will have to manually set WindowSize[2].
+DevNotes		:= ""										
 
 ; ======================================================================================
 
 
 ; =========================== MAIN CODE, DO NOT EDIT BELOW =============================
+
+; Ensure Running as Admin to give max chance file operations will work.
+RunAsAdmin()
 
 /*
 ToDo:
@@ -131,6 +143,7 @@ if (remain_space > 30 && DevNotes != ""){
 Gui, Show, % "W" WindowSize[1] " H" WindowSize[2]
 Return
 
+; Perform the Install
 Install:
 	If (!FileExist(AHKFolder)){
 		msgbox % "The AHK folder (" AHKFolder ") Does not seem to exist. Exiting."
@@ -237,6 +250,18 @@ DetectInstalledAHKVersion(){
 	} else {
 		return 0
 	}
+}
+
+; Run as admin code from http://www.autohotkey.com/board/topic/46526-
+RunAsAdmin(){
+	Global 0
+	IfEqual, A_IsAdmin, 1, Return 0
+	Loop, %0% {
+		params .= A_Space . %A_Index%
+	}
+	DllCall("shell32\ShellExecute" (A_IsUnicode ? "":"A"),uint,0,str,"RunAs",str,(A_IsCompiled ? A_ScriptFullPath
+		: A_AhkPath),str,(A_IsCompiled ? "": """" . A_ScriptFullPath . """" . A_Space) params,str,A_WorkingDir,int,1)
+	ExitApp
 }
 
 GuiClose:
