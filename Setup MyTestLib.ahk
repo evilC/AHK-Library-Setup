@@ -30,12 +30,22 @@ You do not need to bundle the ahk file with the Library.
 ; ========================== DEVELOPER SETTINGS ========================================
 
 DebugMode		:= 1										; Debug mode ON suppresses welcome message and compiled check. You MUST turn DebugMode OFF before compiling for distribution
-LibFiles		:= ["MyTestLib.ahk"]						; Which files you wish to add Redirects to in the AHK lib folder
+LibFiles		:= ["MyTestLib.ahk","test2"]						; Which files you wish to add Redirects to in the AHK lib folder
+WindowSize		:= [300]									; Size of the Setup Window [x,y]. You can omit Y if you don't have any DevNotes. The GUI will Auto-Size.
+DevNotes		:= ""
 
 ; ======================================================================================
 
 
 ; =========================== MAIN CODE, DO NOT EDIT BELOW =============================
+
+/*
+ToDo:
+* Unicode / Ansi check?
+*/
+
+AHKFolder := Substr(A_AhkPath,1,Instr(A_AhkPath,"\",false,0))
+LibFolder := AHKFolder "Lib"
 
 #SingleInstance, force
 
@@ -60,7 +70,6 @@ if (version){
 	; Could not get AHK version
 	msgbox, 4, Error, % "AutoHotkey does not appear to be installed.`n`nWould you like to go to the AutoHotkey website now?"
 }
-ExitApp
 
 ; Check Developer packaged Setup OK
 if (A_IsCompiled){
@@ -74,119 +83,148 @@ if (A_IsCompiled){
 	}
 } else {
 	if (!DebugMode){
-		msgbox % "ERROR: This Script has not been compiled.`n`nPlease compile this script before distributing to users."
+		msgbox % "ERROR: This Script has not been compiled.`n`nPlease compile this script before distributing to users.`n`nIf you are not a developer or do not know, what the this file is, you can ignore / delete it."
 		ExitApp
 	}
 }
 
-;LibUnicodeAnsi	:= "A"
+LINE_SIZE := 24
+FULL_WIDTH := WindowSize[1] - 10
+HEADER_SIZE := 10
 
-Gui, Add, Text, x5 y5 w190 h190 vLog
-Gui, Show, W200 H200
-
-/*
-if (A_AhkVersion == "1.0.48.05"){
-	;msgbox, 4, Title, % "WARNING.`nYou are using a version of AutoHotkey from Autohotkey.com!`nThis version is no longer supported and is out of date.`nPlease use the version from ahkscript.org instead.`n`nDo you wish to open a browser window to that site now?"
-	IfMsgBox Yes
-		Run http://ahkscript.org
-	;ExitApp
-}
-*/
-
-;LibFiles = []
-AHKFolder := Substr(A_AhkPath,1,Instr(A_AhkPath,"\",false,0))
-LibFolder := AHKFolder "Lib"
-
-If (!FileExist(AHKFolder)){
-	msgbox % "The AHK folder (" AHKFolder ") Does not seem to exist. Exiting."
-}
-If (!FileExist(LibFolder)){
-	msgbox, 4, Lib Folder Missing, % "The AHK Lib folder (" AHKFolder "Lib) Does not seem to exist.`n`nIs it OK to create it?"
-	IfMsgBox Yes
-		FileCreateDir, % LibFolder
-		if (ErrorLevel != 0){
-			msgbox % "Could not create " LibFolder "`n`nExiting."
-			ExitApp
-		}
-	Else
-		ExitApp
-}
-
-LibFolder .= "\"
-ScriptFolder := A_ScriptDir "\"
-
+Gui, Add, Text, % "x5 y10 w" WindowSize[1]-10 " center", Files to be Installed for this Library
 Loop % LibFiles.MaxIndex() {
-	; Check source file exists
-	if (FileExist(ScriptFolder LibFiles[A_Index])){
-		;msgbox local copy found
-	}
+	line_y := HEADER_SIZE + (A_Index * (LINE_SIZE - 1))
+	Gui, Add, Text, % "x5 y" line_y " w100", % LibFiles[A_Index]
+	Gui, Add, Text, % "x" WindowSize[1] - 105 " y" line_y " w100 center vRedirectResult" A_Index, PENDING
+}
+Gui, Add, GroupBox, % "x0 y0 w" WindowSize[1] - 4 " h" HEADER_SIZE + (LINE_SIZE - 5) + (LibFiles.Maxindex() * LINE_SIZE)
 
-	; Check for conflicts
-	if (FileExist(LibFolder LibFiles[A_Index])){
-		; Lib file found in lib folder
-		; Is it code or an old redirect?
-		count := 0
-		Loop, Read, % LibFolder LibFiles[A_Index]
-		{
-			If (trim(A_LoopReadLine) != ""){
-				count++
-			}
-		}
-		if (count > 1){
-			; More than one line of text. Not a redirect.
-			msgbox, 4, Replace Code?, % "There is already a file at the following location:" LibFolder LibFiles[A_Index] "`nIt appears to be code, not a Redirect File, as it is more than one line.`n`nIs it OK to replace it?"
-			IfMsgBox, Yes 
-			{
-				FileDelete, % LibFolder LibFiles[A_Index]
-				if (ErrorLevel != 0){
-					msgbox % "Could not delete " LibFolder LibFiles[A_Index]
-					AddToLog(LibFiles[A_Index] ": Redirect FAILED`n")
-					continue
-				}
-			} else {
-				AddToLog(LibFiles[A_Index] ": Redirect FAILED`n")
-				continue
-			}
-		} else {
-			; One line of text, possibly a redirect.
-			msgbox, 4, Replace Code?, % "There is already a file at the following location:" LibFolder LibFiles[A_Index] "`nIt appears to be an old Redirect File, as it is only one line.`n`nIs it OK to replace it?"
-			IfMsgBox, Yes 
-			{
-				FileDelete, % LibFolder LibFiles[A_Index]
-				if (ErrorLevel != 0){
-					msgbox % "Could not delete " LibFolder LibFiles[A_Index]
-					AddToLog(LibFiles[A_Index] ": Redirect FAILED`n")
-					continue
-				}
-			} else {
-				AddToLog(LibFiles[A_Index] ": Redirect FAILED`n")
-				continue
-			}
-		}
-	}
+main_bottom := (LibFiles.MaxIndex() * LINE_SIZE) + 10 + LINE_SIZE
 
-	; Create the include
-	CreateRedirect(A_Index)
-	if (ErrorLevel == 0){
-		AddToLog(LibFiles[A_Index] ": Redirected OK`n")
+; Done main bit of Gui, now need to know window height (if previously specified)
+if (!WindowSize[2]){
+	; Window Height not specified - work out how much more space we need.
+	if (DevNotes){
+		WindowSize[2] := main_bottom + 70
 	} else {
-		msgbox % "Could not create Redirect File "LibFolder LibFiles[A_Index]
-		AddToLog(LibFiles[A_Index] ": Redirect FAILED`n")
+		WindowSize[2] := main_bottom + 20
 	}
-
 }
 
+; Work out where we put the Ok button
+ok_top := WindowSize[2] - 25
+
+; How much space do we have left?
+remain_space := ok_top - main_bottom
+
+Gui, Add, Button, % "x" (WindowSize[1] / 2 ) - 25 " y" (WindowSize[2] - 25) " w50 gInstall", Install
+
+; If we have 20 or  more pixels free between the bottom of the install list and the ok button, show dev notes.
+if (remain_space > 30 && DevNotes != ""){
+	Gui, Add, Text, % "x5 y" main_bottom " w" FULL_WIDTH " center", DEVELOPER NOTES
+	Gui, Add, Text, % "x5 y" main_bottom + 20 " w" FULL_WIDTH " h" remain_space - 20, % DevNotes
+	box_top := main_bottom - 10
+	Gui, Add, GroupBox, % "x0 y" box_top " w" WindowSize[1] - 4 " h" ok_top - box_top - 5
+}
+
+Gui, Show, % "W" WindowSize[1] " H" WindowSize[2]
 Return
+
+Install:
+	If (!FileExist(AHKFolder)){
+		msgbox % "The AHK folder (" AHKFolder ") Does not seem to exist. Exiting."
+	}
+	If (!FileExist(LibFolder)){
+		msgbox, 4, Lib Folder Missing, % "The AHK Lib folder (" AHKFolder "Lib) Does not seem to exist.`n`nIs it OK to create it?"
+		IfMsgBox Yes
+			FileCreateDir, % LibFolder
+			if (ErrorLevel != 0){
+				msgbox % "Could not create " LibFolder "`n`nExiting."
+				ExitApp
+			}
+		Else
+			ExitApp
+	}
+
+	LibFolder .= "\"
+	ScriptFolder := A_ScriptDir "\"
+
+	Loop % LibFiles.MaxIndex() {
+		failed := 0
+		; Check source file exists
+		if (FileExist(ScriptFolder LibFiles[A_Index])){
+			;msgbox local copy found
+		} else {
+			msgbox % ScriptFolder LibFiles[A_Index] " Does not exist."
+			failed := 1
+		}
+
+		; Check for conflicts
+		if (!failed && FileExist(LibFolder LibFiles[A_Index])){
+			; Lib file found in lib folder
+			; Is it code or an old redirect?
+			count := 0
+			Loop, Read, % LibFolder LibFiles[A_Index]
+			{
+				If (trim(A_LoopReadLine) != ""){
+					count++
+				}
+			}
+			if (count > 1){
+				; More than one line of text. Not a redirect.
+				msgbox, 4, Replace Code?, % "There is already a file at the following location:" LibFolder LibFiles[A_Index] "`nIt appears to be code, not a Redirect File, as it is more than one line.`n`nIs it OK to replace it?"
+				IfMsgBox, Yes 
+				{
+					FileDelete, % LibFolder LibFiles[A_Index]
+					if (ErrorLevel != 0){
+						msgbox % "Could not delete " LibFolder LibFiles[A_Index]
+						failed := 1
+					}
+				} else {
+					failed := 1
+				}
+			} else {
+				; One line of text, possibly a redirect.
+				msgbox, 4, Replace Code?, % "There is already a file at the following location:" LibFolder LibFiles[A_Index] "`nIt appears to be an old Redirect File, as it is only one line.`n`nIs it OK to replace it?"
+				IfMsgBox, Yes 
+				{
+					FileDelete, % LibFolder LibFiles[A_Index]
+					if (ErrorLevel != 0){
+						msgbox % "Could not delete " LibFolder LibFiles[A_Index]
+						falied := 1
+					}
+				} else {
+					failed := 1
+				}
+			}
+		}
+
+		if (!failed){
+			; As long as we did not fail previously...
+
+			; Create the include
+			CreateRedirect(A_Index)
+			if (ErrorLevel != 0){
+				msgbox % "Could not create Redirect File "LibFolder LibFiles[A_Index]
+				failed := 1
+			}
+		}
+
+		; Update the UI
+		if (failed){
+			GuiControl, , % "RedirectResult" A_Index , FAILED
+		} else {
+			GuiControl, , % "RedirectResult" A_Index, SUCCEEDED
+		}
+
+	}
+
+	Return
 
 CreateRedirect(idx){
 	global ScriptFolder, LibFolder, LibFiles
 	FileAppend , % "#include " ScriptFolder LibFiles[idx], % LibFolder LibFiles[idx]
-}
-
-AddToLog(text){
-	global Log
-	Log .= text
-	GuiControl, , Log , % Log	
 }
 
 ; Detects which version of AHK is installed.
